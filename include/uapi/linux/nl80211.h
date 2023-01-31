@@ -2754,6 +2754,12 @@ enum nl80211_commands {
  *
  * @NL80211_ATTR_TD_BITMAP: Transition Disable bitmap, for subsequent
  *	(re)associations.
+ *
+ * @NL80211_ATTR_PUNCT_BITMAP: (u32) Preamble puncturing bitmap, lowest
+ *	bit corresponds to the lowest 20 MHz channel. Each bit set to 1
+ *	indicates that the sub-channel is punctured. Higher 16 bits are
+ *	reserved.
+ *
  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
  * @NL80211_ATTR_MAX: highest attribute number currently defined
  * @__NL80211_ATTR_AFTER_LAST: internal use
@@ -3284,6 +3290,8 @@ enum nl80211_attrs {
 	NL80211_ATTR_TD_BITMAP,
 
 	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
+
+	NL80211_ATTR_PUNCT_BITMAP,
 
 	/* add attributes here, update the policy in nl80211.c */
 
@@ -6299,6 +6307,8 @@ enum nl80211_feature_flags {
  *	might apply, e.g. no scans in progress, no offchannel operations
  *	in progress, and no active connections.
  *
+ * @NL80211_EXT_FEATURE_PUNCT: Driver supports preamble puncturing in AP mode.
+ *
  * @NUM_NL80211_EXT_FEATURES: number of extended features.
  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
  */
@@ -6367,6 +6377,7 @@ enum nl80211_ext_feature_index {
 	NL80211_EXT_FEATURE_FILS_CRYPTO_OFFLOAD,
 	NL80211_EXT_FEATURE_RADAR_BACKGROUND,
 	NL80211_EXT_FEATURE_POWERED_ADDR_CHANGE,
+	NL80211_EXT_FEATURE_PUNCT,
 
 	/* add new features before the definition below */
 	NUM_NL80211_EXT_FEATURES,
