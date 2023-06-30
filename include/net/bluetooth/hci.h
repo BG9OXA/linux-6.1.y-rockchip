@@ -2876,6 +2876,10 @@ struct hci_ev_le_enh_conn_complete {
 	__u8      clk_accurancy;
 } __packed;
 
+#define LE_PA_DATA_COMPLETE	0x00
+#define LE_PA_DATA_MORE_TO_COME	0x01
+#define LE_PA_DATA_TRUNCATED	0x02
+
 #define HCI_EV_LE_PER_ADV_REPORT    0x0f
 struct hci_ev_le_per_adv_report {
 	__le16	 sync_handle;
@@ -2886,10 +2890,6 @@ struct hci_ev_le_per_adv_report {
 	__u8     length;
 	__u8     data[];
 } __packed;
-
-#define LE_PA_DATA_COMPLETE	0x00
-#define LE_PA_DATA_MORE_TO_COME	0x01
-#define LE_PA_DATA_TRUNCATED	0x02
 
 #define HCI_EV_LE_EXT_ADV_SET_TERM	0x12
 struct hci_evt_le_ext_adv_set_term {
