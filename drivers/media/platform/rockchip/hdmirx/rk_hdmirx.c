@@ -1945,6 +1945,17 @@ static int hdmirx_g_parm(struct file *file, void *priv,
 	return 0;
 }
 
+static int hdmirx_g_input(struct file *file, void *priv, unsigned int *i)
+{
+	*i = 0;
+	return 0;
+}
+
+static int hdmirx_s_input(struct file *file, void *priv, unsigned int i)
+{
+	return i == 0 ? 0 : -EINVAL;
+}
+
 static int fcc_xysubs(u32 fcc, u32 *xsubs, u32 *ysubs)
 {
 	/* Note: cbcr plane bpp is 16 bit */
