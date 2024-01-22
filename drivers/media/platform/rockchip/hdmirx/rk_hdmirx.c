@@ -150,7 +150,9 @@ enum hdmirx_edid_version {
 	HDMIRX_EDID_USER = 0,
 	HDMIRX_EDID_340M = 1,
 	HDMIRX_EDID_600M = 2,
-	HDMIRX_EDID_HDR = 3,
+	HDMIRX_EDID_340M_NV12 = 3,
+	HDMIRX_EDID_600M_NV12 = 4,
+	HDMIRX_EDID_HDR = 5,
 };
 
 struct hdmirx_reg_table {
@@ -1833,9 +1835,9 @@ static int hdmirx_wait_lock_and_get_timing(struct rk_hdmirx_dev *hdmirx_dev)
 	}
 
 	if (i == WAIT_SIGNAL_LOCK_TIME) {
-		v4l2_err(v4l2_dev, "%s signal not lock, tmds_clk_ratio:%d\n",
+		v4l2_dbg(1, debug, v4l2_dev, "%s signal not lock, tmds_clk_ratio:%d\n",
 				__func__, hdmirx_dev->tmds_clk_ratio);
-		v4l2_err(v4l2_dev, "%s mu_st:%#x, scdc_st:%#x, dma_st10:%#x\n",
+		v4l2_dbg(1, debug, v4l2_dev, "%s mu_st:%#x, scdc_st:%#x, dma_st10:%#x\n",
 				__func__, mu_status, scdc_status, dma_st10);
 		v4l2_ctrl_s_ctrl(hdmirx_dev->content_type, V4L2_DV_IT_CONTENT_TYPE_NO_ITC);
 
@@ -1943,17 +1945,6 @@ static int hdmirx_g_parm(struct file *file, void *priv,
 	parm->parm.capture.timeperframe.denominator = fps.denominator;
 
 	return 0;
-}
-
-static int hdmirx_g_input(struct file *file, void *priv, unsigned int *i)
-{
-	*i = 0;
-	return 0;
-}
-
-static int hdmirx_s_input(struct file *file, void *priv, unsigned int i)
-{
-	return i == 0 ? 0 : -EINVAL;
 }
 
 static int fcc_xysubs(u32 fcc, u32 *xsubs, u32 *ysubs)
@@ -4193,6 +4184,8 @@ static int hdmirx_parse_dt(struct rk_hdmirx_dev *hdmirx_dev)
 	if (of_property_read_bool(np, "hdr-support"))
 		hdmirx_dev->hdr_support = true;
 
+	of_property_read_u32(np, "edid-version", &hdmirx_dev->edid_version);
+
 	ret = of_reserved_mem_device_init(dev);
 	if (ret)
 		dev_warn(dev, "No reserved memory for HDMIRX, use default CMA\n");
@@ -4252,23 +4245,55 @@ static int hdmirx_power_on(struct rk_hdmirx_dev *hdmirx_dev)
 	return 0;
 }
 
+static void hdmirx_fixup_edid(struct rk_hdmirx_dev *hdmirx_dev,
+			      u8 *edid, int edid_len)
+{
+	int i;
+	u8 sum;
+
+	/* CTA Extension data format */
+#define EDID_CEA_YCRCB444	(1 << 5)
+
+	if (hdmirx_dev->edid_version == HDMIRX_EDID_340M ||
+	    hdmirx_dev->edid_version == HDMIRX_EDID_600M)
+		edid[131] |=  EDID_CEA_YCRCB444;
+	else
+		edid[131] &= ~EDID_CEA_YCRCB444;
+
+	/* update checksum */
+	for (i = 0, sum = 0; i < edid_len - 1; i++)
+		sum += edid[i];
+
+	edid[i] = 0x100 - sum;
+}
+
 static void hdmirx_edid_init_config(struct rk_hdmirx_dev *hdmirx_dev)
 {
 	int ret;
 	struct v4l2_edid def_edid;
+	u8 *edid_data;
+	int edid_len;
 
 	/* disable hpd and write edid */
 	def_edid.pad = 0;
 	def_edid.start_block = 0;
 	def_edid.blocks = EDID_NUM_BLOCKS_MAX;
-	if (hdmirx_dev->edid_version == HDMIRX_EDID_HDR)
-		def_edid.edid = edid_init_data_hdr;
-	else if (hdmirx_dev->edid_version == HDMIRX_EDID_600M)
-		def_edid.edid = edid_init_data_600M;
-	else
-		def_edid.edid = edid_init_data_340M;
-	if (hdmirx_dev->hdr_support)
-		def_edid.edid = edid_init_data_hdr;
+	if (hdmirx_dev->hdr_support ||
+	    hdmirx_dev->edid_version == HDMIRX_EDID_HDR) {
+		edid_data = edid_init_data_hdr;
+		edid_len = sizeof(edid_init_data_hdr);
+	} else if (hdmirx_dev->edid_version == HDMIRX_EDID_600M ||
+		   hdmirx_dev->edid_version == HDMIRX_EDID_600M_NV12) {
+		edid_data = edid_init_data_600M;
+		edid_len = sizeof(edid_init_data_600M);
+		hdmirx_fixup_edid(hdmirx_dev, edid_data, edid_len);
+	} else {
+		edid_data = edid_init_data_340M;
+		edid_len = sizeof(edid_init_data_340M);
+		hdmirx_fixup_edid(hdmirx_dev, edid_data, edid_len);
+	}
+
+	def_edid.edid = edid_data;
 	ret = hdmirx_write_edid(hdmirx_dev, &def_edid, false);
 	if (ret)
 		dev_err(hdmirx_dev->dev, "%s write edid failed!\n", __func__);
