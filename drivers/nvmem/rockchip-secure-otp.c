@@ -22,8 +22,8 @@
 #include <linux/tee_drv.h>
 #include <linux/uuid.h>
 #include <linux/version.h>
-
-static DEFINE_MUTEX(nvmem_mutex);
+#include "rockchip-otp.h"
+#include "rockchip-secure-otp.h"
 
 struct rockchip_data;
 
@@ -74,7 +74,7 @@ int rockchip_read_oem_non_protected_otp(unsigned int byte_off,
 
 	memset(&sess_arg, 0, sizeof(sess_arg));
 
-	mutex_lock(&nvmem_mutex);
+	rockchip_otp_mutex_lock();
 
 	/* Open context with OP-TEE driver */
 	ctx = tee_client_open_context(NULL, optee_ctx_match, NULL, NULL);
@@ -145,7 +145,7 @@ out_sess:
 out_ctx:
 	tee_client_close_context(ctx);
 out_exit:
-	mutex_unlock(&nvmem_mutex);
+	rockchip_otp_mutex_unlock();
 	return rc;
 }
 EXPORT_SYMBOL_GPL(rockchip_read_oem_non_protected_otp);
@@ -176,7 +176,7 @@ int rockchip_write_oem_non_protected_otp(unsigned int byte_off,
 
 	memset(&sess_arg, 0, sizeof(sess_arg));
 
-	mutex_lock(&nvmem_mutex);
+	rockchip_otp_mutex_lock();
 
 	/* Open context with OP-TEE driver */
 	ctx = tee_client_open_context(NULL, optee_ctx_match, NULL, NULL);
@@ -247,7 +247,7 @@ out_sess:
 out_ctx:
 	tee_client_close_context(ctx);
 out_exit:
-	mutex_unlock(&nvmem_mutex);
+	rockchip_otp_mutex_unlock();
 	return rc;
 }
 EXPORT_SYMBOL_GPL(rockchip_write_oem_non_protected_otp);
