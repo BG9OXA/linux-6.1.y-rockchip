@@ -414,6 +414,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3576-vehicle-evb-v20.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3576-vehicle-evb-v20-linux.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3576-vehicle-evb-v20-ufs.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3576-vehicle-evb-v21.dtb
+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3576-vehicle-evb-v21-linux.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3576-vehicle-evb-v21-mcu.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-armsom-aim7-io.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-armsom-sige7.dtb
