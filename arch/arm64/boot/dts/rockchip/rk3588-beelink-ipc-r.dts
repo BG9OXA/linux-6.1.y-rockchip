@@ -89,21 +89,31 @@
 		rockchip,jack-det;
 	};
 
-	es8316_sound: es8316-sound {
+	es8388_sound: es8388-sound {
 		status = "okay";
-		compatible = "simple-audio-card";
-		simple-audio-card,format = "i2s";
-		simple-audio-card,mclk-fs = <256>;
-		simple-audio-card,name = "rockchip-es8316";
-		simple-audio-card,dai-link@0 {
-			format = "i2s";
-			cpu {
-				sound-dai = <&i2s0_8ch>;
-			};
-			codec {
-				sound-dai = <&es8316>;
-			};
-		};
+		compatible = "rockchip,multicodecs-card";
+		rockchip,card-name = "rockchip-es8388";
+		io-channels = <&saradc 3>;
+		io-channel-names = "adc-detect";
+		keyup-threshold-microvolt = <1800000>;
+		poll-interval = <100>;
+		spk-con-gpios = <&gpio3 RK_PD0 GPIO_ACTIVE_HIGH>;
+		hp-con-gpios = <&gpio4 RK_PA4 GPIO_ACTIVE_HIGH>;
+		rockchip,format = "i2s";
+		rockchip,mclk-fs = <256>;
+		rockchip,cpu = <&i2s0_8ch>;
+		rockchip,codec = <&es8388>;
+		rockchip,audio-routing =
+			"Headphone", "LOUT2",
+			"Headphone", "ROUT2",
+			"Speaker", "LOUT2",
+			"Speaker", "ROUT2",
+			"Headphone", "Headphone Power",
+			"Speaker", "Speaker Power",
+			"LINPUT1", "Main Mic",
+			"LINPUT2", "Main Mic",
+			"RINPUT1", "Headset Mic",
+			"RINPUT2", "Headset Mic";
 	};
 	leds: leds {
                  compatible = "gpio-leds";
@@ -114,7 +124,12 @@
          };
 
 	rk_headset: rk-headset {
-		status = "okay";
+		/* Disabled: headset detection is handled by the multicodecs
+		 * sound card via adc-detect on saradc channel 3, matching the
+		 * stock Android configuration. Keeping this node enabled would
+		 * make two drivers compete for saradc channel 3.
+		 */
+		status = "disabled";
 		compatible = "rockchip_headset";
 		headset_gpio = <&gpio1 RK_PC4 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
@@ -166,28 +181,6 @@
                  */
                 post-power-on-delay-ms = <200>;
                 reset-gpios = <&gpio0 RK_PC4 GPIO_ACTIVE_LOW>;
-         };
-      wireless_bluetooth: wireless-bluetooth {
-                compatible = "bluetooth-platdata";
-                uart_rts_gpios = <&gpio4 RK_PC4 GPIO_ACTIVE_LOW>;
-                pinctrl-names = "default", "rts_gpio";
-                pinctrl-0 = <&uart9m0_rtsn>, <&bt_reset_gpio>, <&bt_wake_gpio>, <&bt_irq_gpio>;
-                pinctrl-1 = <&uart9_gpios>;
-                BT,reset_gpio    = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
-                BT,wake_gpio     = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
-                BT,wake_host_irq = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
-                status = "okay";
-         };
-
-       wireless_wlan: wireless-wlan {
-               compatible = "wlan-platdata";
-               wifi_chip_type = "ap6275s";
-               pinctrl-names = "default";
-               pinctrl-0 = <&wifi_host_wake_irq>;
-               WIFI,host_wake_irq = <&gpio0 RK_PB2 GPIO_ACTIVE_HIGH>;
-               WIFI,poweren_gpio = <&gpio0 RK_PC4 GPIO_ACTIVE_HIGH>;
-
-               status = "okay";
          };
 
 };
@@ -294,11 +287,33 @@
   pinctrl-0 = <&sdiom0_pins>;
   sd-uhs-sdr104;
   status = "okay";
+
+  #address-cells = <1>;
+  #size-cells = <0>;
+
+  brcmf: wifi@1 {
+    reg = <1>;
+    compatible = "brcm,bcm4329-fmac";
+    interrupt-parent = <&gpio0>;
+    interrupts = <RK_PB2 IRQ_TYPE_LEVEL_HIGH>;
+    interrupt-names = "host-wake";
+    pinctrl-names = "default";
+    pinctrl-0 = <&wifi_host_wake_irq>;
+  };
 };
 &uart9 {
   status = "okay";
   pinctrl-names = "default";
   pinctrl-0 = <&uart9m0_xfer &uart9m0_ctsn>;
+
+  bluetooth {
+    compatible = "brcm,bcm43752-bt";
+    shutdown-gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
+    device-wakeup-gpios = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
+    host-wakeup-gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
+    pinctrl-names = "default";
+    pinctrl-0 = <&bt_reset_gpio &bt_wake_gpio &bt_irq_gpio>;
+  };
 };
 
 /* NPU */
@@ -312,6 +327,11 @@
 &dfi {
 	status = "okay";
 };
+
+&dmac1 {
+	arm,pl330-mcbufsz-bytes = <1024>;
+};
+
 &combphy1_ps {
          status = "okay";
 };
@@ -599,7 +619,10 @@
 /* Video Ports */
 
 &vop {
+	vop-supply = <&vdd_log_s0>;
 	status = "okay";
+	assigned-clocks = <&cru ACLK_VOP>;
+	assigned-clock-rates = <800000000>;
 };
 
 &vop_mmu {
@@ -645,7 +668,6 @@
 };
 
 &usbdp_phy1_u3 {
-    maximum-speed = "high-speed";
    status = "okay";
 };
 &usbdrd_dwc3_1 {
@@ -786,13 +808,15 @@
 /* I2C */
 
 &i2c7 {
-	status = "disabled";
+	status = "okay";
 
-	es8316: es8316@11 {
-		compatible = "everest,es8316";
+	es8388: es8388@11 {
+		compatible = "everest,es8388", "everest,es8323";
 		reg = <0x11>;
 		clocks = <&cru I2S0_8CH_MCLKOUT>;
 		clock-names = "mclk";
+		assigned-clocks = <&cru I2S0_8CH_MCLKOUT>;
+		assigned-clock-rates = <12288000>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&i2s0_mclk>;
 		#sound-dai-cells = <0>;
