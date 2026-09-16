@@ -1437,10 +1437,10 @@ static int ov5647_init_controls(struct ov5647 *sensor, struct device *dev)
 
 	v4l2_ctrl_handler_init(&sensor->ctrls, 8);
 
+	sensor->ctrls.lock = &sensor->lock;
+
 	sensor->link_freq = v4l2_ctrl_new_int_menu(&sensor->ctrls, NULL, V4L2_CID_LINK_FREQ,
 				      ARRAY_SIZE(link_freq_menu_items) - 1, 0, link_freq_menu_items);
-
-	sensor->ctrls.lock = &sensor->lock;
 
 	v4l2_ctrl_new_std(&sensor->ctrls, &ov5647_ctrl_ops,
 			  V4L2_CID_AUTOGAIN, 0, 1, 1, 0);
