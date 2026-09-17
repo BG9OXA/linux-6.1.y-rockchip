@@ -579,7 +579,7 @@
 	connect = <&vp0_out_hdmi0>;
 };
 
-&hdptxphy_hdmi0 {
+&hdptxphy0 {
 	status = "okay";
 };
 

@@ -728,7 +728,7 @@
 /* ===== HDMI / Display ===== */
 
 // hdmiphy: hdmiphy@fed60000 (BSP vendor hdptx phy for hdmi0)
-&hdptxphy_hdmi0 {
+&hdptxphy0 {
 	status = "okay";
 };
 

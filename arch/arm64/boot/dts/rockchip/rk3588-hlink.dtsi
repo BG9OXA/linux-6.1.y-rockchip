@@ -649,7 +649,7 @@
 };
 
 &display_subsystem {
-	clocks = <&hdptxphy_hdmi0>, <&hdptxphy_hdmi1>;
+	clocks = <&hdptxphy0>, <&hdptxphy1>;
 	clock-names = "hdmi0_phy_pll", "hdmi1_phy_pll";
 	memory-region = <&drm_logo>;
 	memory-region-names = "drm-logo";
@@ -672,11 +672,11 @@
 	connect = <&vp2_out_dp0>;
 };
 
-&hdptxphy_hdmi0 {
+&hdptxphy0 {
 	status = "okay";
 };
 
-&hdptxphy_hdmi1 {
+&hdptxphy1 {
 	status = "okay";
 };
 

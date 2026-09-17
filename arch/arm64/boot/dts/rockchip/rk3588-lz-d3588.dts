@@ -494,7 +494,7 @@
 	status = "okay";
     memory-region = <&drm_logo>;
     memory-region-names = "drm-logo";
-	clocks = <&hdptxphy_hdmi0>;
+	clocks = <&hdptxphy0>;
 	clock-names = "hdmi0_phy_pll";
 };
 
@@ -953,7 +953,7 @@
 	};
 };
 
-&hdptxphy_hdmi0 {
+&hdptxphy0 {
 	status = "okay";
 	vin-supply = <&vcc_3v3_s3>;
     clk-port {
@@ -1017,7 +1017,7 @@
     status = "okay";
 };
 
-&hdptxphy_hdmi1 {
+&hdptxphy1 {
     status = "okay";
     vin-supply = <&vcc_3v3_s3>;
     clk-port {
